@@ -6,14 +6,10 @@ import pygmail.errors
 import argparse
 from gmailextract.fs import sanatize_filename, unique_filename
 
-
-test_email = "vincent.g.blair@gmail.com"
-test_pass = "security123!"
-
 parser = argparse.ArgumentParser(description='Extract images from a gmail account.')
-parser.add_argument('-e', '--email', type=str, default=test_email,
+parser.add_argument('-e', '--email', type=str, default="",
                     help='The email of the account to search for attachments in.')
-parser.add_argument('-p', '--password', type=str, default=test_pass,
+parser.add_argument('-p', '--password', type=str, default="",
                     help='The password of the account to search for messages in.')
 parser.add_argument('-d', '--dest', type=str, default=".",
                     help="The path where attachments should be downloaded.")
@@ -74,7 +70,6 @@ while True and not hit_limit:
                 mapping[safe_filename] = message.gmail_id, attachment.sha1(), message.subject
                 attachment_count += 1
         num_messages += 1
-        print num_messages, args.limit
         if num_messages >= args.limit:
             hit_limit = True
             break
@@ -96,15 +91,18 @@ print "Beginning process of removing images from email messages"
 # a single email message once, instead of pulling it down multiple times (which
 # would change its gmail_id and ruin all things)
 to_delete = {}
+to_delete_subjects = {}
 for attachment_name, (gmail_id, attachment_hash, message_subject) in mapping.items():
     if not os.path.isfile(os.path.join(args.dest, attachment_name)):
         if not gmail_id in to_delete:
             to_delete[gmail_id] = []
-        to_delete[gmail_id, message_subject].append((attachment_name, attachment_hash))
+            to_delete_subjects[gmail_id] = message_subject
+        to_delete[gmail_id].append((attachment_name, attachment_hash))
 
 num_messages_changed = 0
 num_attachments_removed = 0
-for (gmail_id, message_subject), attachments_to_remove in to_delete.items():
+for gmail_id, attachments_to_remove in to_delete.items():
+    message_subject = to_delete_subjects[gmail_id]
     print u" - Removing {0} images from message '{1}'".format(len(attachments_to_remove), message_subject)
     message_to_change = inbox.fetch_gm_id(gmail_id, full=True)
     attach_hashes = {a.sha1(): a for a in message_to_change.attachments()}
