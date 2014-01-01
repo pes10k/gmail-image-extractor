@@ -97,7 +97,7 @@ for attachment_name, (gmail_id, attachment_hash, message_subject) in mapping.ite
         if not gmail_id in to_delete:
             to_delete[gmail_id] = []
             to_delete_subjects[gmail_id] = message_subject
-        to_delete[gmail_id].append((attachment_name, attachment_hash))
+        to_delete[gmail_id].append(attachment_hash)
 
 num_messages_changed = 0
 num_attachments_removed = 0
@@ -107,10 +107,10 @@ for gmail_id, attachments_to_remove in to_delete.items():
     message_to_change = inbox.fetch_gm_id(gmail_id, full=True)
     attach_hashes = {a.sha1(): a for a in message_to_change.attachments()}
     removed_attachments = 0
-    for attachment_name, attachment_hash in attachments_to_remove:
+    for attachment_hash in attachments_to_remove:
         attach_to_delete = attach_hashes[attachment_hash]
         if attach_to_delete.remove():
-            print u" * Removed {0}".format(attachment.name())
+            print u" * Removed {0}".format(attach_to_delete.name())
             removed_attachments += 1
             num_attachments_removed += 1
 
