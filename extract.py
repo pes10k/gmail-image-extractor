@@ -70,7 +70,7 @@ while True and not hit_limit:
                 mapping[safe_filename] = message.gmail_id, attachment.sha1(), message.subject
                 attachment_count += 1
         num_messages += 1
-        if num_messages >= args.limit:
+        if args.limit > 0 and num_messages >= args.limit:
             hit_limit = True
             break
     offset += per_page
