@@ -139,7 +139,6 @@ class GmailImageExtractor(object):
             if len(messages) == 0:
                 break
             for msg in messages:
-                print msg.subject
                 for att in msg.attachments():
                     if att.type in ATTACHMENT_MIMES:
                         poss_fname = "{0} - {1}".format(msg.subject, att.name())
