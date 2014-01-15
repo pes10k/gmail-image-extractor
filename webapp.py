@@ -13,8 +13,13 @@ if not os.path.isdir(attr_dir):
     os.mkdir(attr_dir)
 
 tpl_loader = tornado.template.Loader(os.path.join(root_dir, 'templates'))
-simultaneous = 1
 state = {}
+
+def plural(msg, num):
+    if num == 1:
+        return msg
+    else:
+        return u"{0}s".format(msg)
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -35,9 +40,9 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def _handle_connect(self, msg):
         state['extractor'] = GmailImageExtractor(attr_dir, msg['email'],
-                                                 msg['pass'], limit=0,
-                                                 batch=simultaneous,
-                                                 replace=False)
+                                                 msg['pass'], limit=int(msg['limit']),
+                                                 batch=int(msg['simultaneous']),
+                                                 replace=bool(msg['rewrite']))
         if not state['extractor'].connect():
             self.write_message({'ok': False,
                                 "type": "connect",
@@ -50,21 +55,21 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             num_messages = state['extractor'].num_messages_with_attachments()
             self.write_message({'ok': True,
                                 "type": "count",
-                                "msg": u"Found {0} messages with attachments".format(num_messages),
+                                "msg": u"Found {0} {1} with attachments".format(num_messages, plural(u"message", num_messages)),
                                 "num": num_messages})
 
             def _status(*args):
                 if args[0] == 'message':
-                    msg = u"Fetching {0} messages, {1} - {2}".format(simultaneous, args[1], num_messages)
+                    status_msg = u"Fetching messages {1} - {2}".format(msg['simultaneous'], args[1], num_messages)
                     self.write_message({"ok": True,
                                         "type": "downloading",
-                                        "msg": msg,
+                                        "msg": status_msg,
                                         "num": args[1]})
 
             attachment_count = state['extractor'].extract(_status)
             self.write_message({"ok": True,
                                 "type": "download-complete",
-                                "msg": "Succesfully stored {0} attachments to disk".format(attachment_count),
+                                "msg": "Succesfully stored {0} {1} to disk".format(attachment_count, plural(u"attachment", attachment_count)),
                                 "num": attachment_count})
 
     def _handle_sync(self, msg):
@@ -72,11 +77,11 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
         self.write_message({"ok": True,
                             "type": "file-checking",
-                            "msg": "Checking to see which files have been deleted."})
+                            "msg": u"Checking to see which files have been deleted."})
         num_deletions = extractor.check_deletions()
         self.write_message({"ok": True,
                             "type": "file-checked",
-                            "msg": "Found {0} images deleted".format(num_deletions),
+                            "msg": u"Found {0} {1} deleted".format(num_deletions, plural(u"image", num_deletions)),
                             "num": num_deletions})
 
         def _sync_status(*args):
@@ -84,16 +89,19 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             if update_type == "fetch":
                 self.write_message({"ok": True,
                                     "type": "removing",
-                                    "msg": u"Removing {0} images from message '{1}'".format(args[2], args[1])})
+                                    "msg": u"Removing {0} {1} from message '{2}'.".format(args[2], args[1], plural(u"image", args[2]))})
             elif update_type == "write":
                 self.write_message({"ok": True,
                                     "type": "removed",
-                                    "msg": "Writing altered version"})
+                                    "msg": u"Writing altered version of '{0}' to Gmail.".format(args[1])})
 
         num_attch_removed, num_msg_changed = extractor.sync(callback=_sync_status)
         self.write_message({"ok": True,
                             "type": "finished",
-                            "msg": "Removed {0} images from {1} messages".format(num_attch_removed, num_msg_changed)})
+                            "msg": u"Removed {0} {1} from {2} {3}.".format(num_attch_removed,
+                                                                               plural(u"image", num_attch_removed),
+                                                                               num_msg_changed,
+                                                                               plural(u"message", num_msg_changed))})
 
     def on_close(self):
         state['extractor'] = None
