@@ -141,7 +141,7 @@ class GmailImageExtractor(object):
             for msg in messages:
                 for att in msg.attachments():
                     if att.type in ATTACHMENT_MIMES:
-                        poss_fname = "{0} - {1}".format(msg.subject, att.name())
+                        poss_fname = u"{0} - {1}".format(msg.subject, att.name())
                         safe_fname = sanatize_filename(poss_fname)
                         fname = unique_filename(self.dest, safe_fname)
 
