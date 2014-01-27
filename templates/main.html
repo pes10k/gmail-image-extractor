@@ -30,52 +30,6 @@
           <input type="password" class="form-control" id="password" placeholder="Password">
         </div>
 
-        <div class="panel-group" id="accordion">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#advanced-options">
-                  Advanced Options
-                </a>
-              </h4>
-            </div>
-            <div id="advanced-options" class="panel-collapse collapse">
-              <div class="panel-body">
-                <div class="form-group">
-                  <label for="simultaneous-messages">Simultaneous Messages to Download</label>
-                  <select id="simultaneous" class="form-control">
-                    <option>1</option>
-                    <option selected="selected">10</option>
-                    <option>20</option>
-                  </select>
-                  <span class="help-block">
-                    How many messages to download from Gmail at a time.  A lower value will work better on slow connections.
-                  </span>
-                </div>
-
-                <div class="form-group">
-                  <label for="message-limit">Maximum Messages to Download</label>
-                  <input type="number" id="message-limit" value="0" placeholder="Number of messages to download." class="form-control">
-                  <span class="help-block">
-                    Set to 0 to download all messages with attachments from Gmail.
-                  </span>
-                </div>
-
-                <div class="form-group">
-                  <div class="checkbox">
-                    <label>
-                      <input id="rewrite-messages" type="checkbox" value="1" checked="checked"> Rewrite Messages
-                    </label>
-                    <span class="help-block">
-                      Whether to rewrite messages in place on Gmail, or to create parallel copies of messages.
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <hr />
 
         <button type="submit" id="submit" class="btn btn-primary btn-block btn-lg">Submit</button>
@@ -92,6 +46,12 @@
 
       <form role="form" id="sync-form" style="display: none">
         <button type="submit" class="btn btn-primary btn-block btn-lg">Sync Gmail Account</button>
+      </form>
+
+      <form role="form" id="confirm-form" style="display: none" class="well">
+        <p> </p>
+        <button type="cancel" class="btn btn-warning btn-block btn-lg">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Continue</button>
       </form>
 
     </div>

@@ -35,6 +35,8 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             self._handle_connect(msg)
         elif msg['type'] == 'sync':
             self._handle_sync(msg)
+        elif msg['type'] == 'confirm':
+            self._handle_confirmation(msg)
         else:
             return
 
@@ -83,6 +85,9 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                             "type": "file-checked",
                             "msg": u"Found {0} {1} deleted".format(num_deletions, plural(u"image", num_deletions)),
                             "num": num_deletions})
+
+    def _handle_confirmation(self, msg):
+        extractor = state['extractor']
 
         def _sync_status(*args):
             update_type = args[0]

@@ -10,9 +10,8 @@ jQuery(function ($) {
         $auth_fields = $auth_form.find(":input"),
         $alert = $(".alert"),
         $sync_form = $("#sync-form"),
-        $simultaneous_field = $("#simultaneous"),
-        $limit_field = $("#message-limit"),
-        $rewrite_field = $("#rewrite-messages"),
+        $confim_form = $("#confirm-form"),
+        $no_confirm_bttn = $confim_form.find("[type=cancel]"),
         rewrite_index = 0,
         rewrite_total = 0,
         feedback,
@@ -81,9 +80,9 @@ jQuery(function ($) {
             "email": $email.val(),
             "pass": $pass.val(),
             "type": "connect",
-            "limit": $limit_field.val(),
-            "simultaneous": $simultaneous_field.val(),
-            "rewrite": $rewrite_field.val()
+            "limit": 0,
+            "simultaneous": 10,
+            "rewrite": 1
         });
 
         $auth_fields.attr("disabled", "disabled");
@@ -101,6 +100,25 @@ jQuery(function ($) {
         $(this).find("[type=submit]").attr("disabled", "disabled");
         ws.send(params);
 
+        return false;
+    });
+
+    $confim_form.submit(function () {
+
+        var params = JSON.stringify({
+            "type": "confirm",
+        });
+
+        $(this).find("button").attr("disabled", "disabled");
+        ws.send(params);
+
+        return false;
+    });
+
+    $no_confirm_bttn.click(function () {
+
+        feedback({msg: "Thank you for your participation in this study."});
+        $confim_form.fadeOut();
         return false;
     });
 
@@ -141,12 +159,17 @@ jQuery(function ($) {
                 break;
 
             case "file-checked":
-                feedback(msg);
-                update_progress(0, msg.num);
                 rewrite_total = msg.num;
+                hide_progress();
+                $alert.hide();
+                $confim_form
+                    .fadeIn()
+                    .find("p")
+                        .text("Are you sure you want to remove " + rewrite_total + " images from your email account?  This action is irreversable.");
                 break;
 
             case "removing":
+                $confim_form.fadeOut();
                 feedback(msg);
                 update_progress(++rewrite_index, rewrite_total);
                 break;
