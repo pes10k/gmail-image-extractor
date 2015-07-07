@@ -19,7 +19,7 @@ jQuery(function ($) {
         num_messages,
         update_progress,
         hide_progress,
-        ws = new WebSocket("ws://" + loc.host + (loc.port ? (":" + loc.port) : "")) + "/ws");
+        ws = new WebSocket("ws://" + loc.host + (loc.port ? (":" + loc.port) : "") + "/ws");
 
     hide_progress = function () {
         $prog_container.fadeOut();
