@@ -9,10 +9,13 @@
       <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
     <![endif]-->
     <script type="text/javascript">
-      window.gmail = {
-        base: "http://localhost:8888/",
-        home: "{{ home_dir }}"
-      };
+      (function () {
+        var loc = window.location;
+        window.gmail = {
+          base: loc.protocol + "://" + loc.host + (loc.port ? (":" + loc.port) : ""),
+          home: "{{ home_dir }}"
+        };
+      }());
     </script>
   </head>
   <body>
