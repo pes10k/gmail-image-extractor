@@ -1,2 +1,2 @@
 tornado
--e git+git@github.com:snyderp/pygmail.git@b3e57be34ec5a8a5d129540cbaafb7445af81a7e#egg=pygmail
+-e git+git@github.com:snyderp/pygmail.git@0e05ef8aea151ad3da96060c97fbbaad49395089#egg=pygmail
