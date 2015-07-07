@@ -1,6 +1,7 @@
 jQuery(function ($) {
 
     var prog_hidden = true,
+        loc = window.location,
         $prog_container = $(".progress"),
         $prog = $(".progress-bar"),
         $email = $("#email"),
@@ -18,7 +19,7 @@ jQuery(function ($) {
         num_messages,
         update_progress,
         hide_progress,
-        ws = new WebSocket("ws://localhost:8888/ws");
+        ws = new WebSocket("ws://" + loc.host + (loc.port ? (":" + loc.port) : "")) + "/ws");
 
     hide_progress = function () {
         $prog_container.fadeOut();
