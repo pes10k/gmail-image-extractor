@@ -61,6 +61,15 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                                 "num": num_messages})
 
             def _status(*args):
+
+                #added
+                if args[0] == 'image':
+                    self.write_message({"ok": True,
+                                      "type": "image",
+                                      "image_name": args[1],
+                                      "image_id": args[2],
+                                      "image_body": args[3]});
+
                 if args[0] == 'message':
                     status_msg = u"Fetching messages {1} - {2}".format(msg['simultaneous'], args[1], num_messages)
                     self.write_message({"ok": True,
@@ -71,7 +80,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             attachment_count = state['extractor'].extract(_status)
             self.write_message({"ok": True,
                                 "type": "download-complete",
-                                "msg": "Succesfully stored {0} {1} to disk".format(attachment_count, plural(u"attachment", attachment_count)),
+                                "msg": "Succesfully found {0} {1}".format(attachment_count, plural(u"image", attachment_count)),
                                 "num": attachment_count})
 
     def _handle_sync(self, msg):

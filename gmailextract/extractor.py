@@ -2,6 +2,9 @@ import os
 import pygmail.errors
 from .fs import sanatize_filename, unique_filename
 from pygmail.account import Account
+import base64
+import time #temp
+
 
 ATTACHMENT_MIMES = ('image/jpeg', 'image/png', 'image/gif')
 
@@ -100,7 +103,7 @@ class GmailImageExtractor(object):
         path set at instantiation.
 
         Keyword Args:
-            callback -- An optional funciton that will be called with updates
+            callback -- An optional function that will be called with updates
                         about the image extraction process. If provided,
                         will be called with either the following arguments
 
@@ -135,7 +138,7 @@ class GmailImageExtractor(object):
         while True and not hit_limit:
             _cb('message', offset + 1)
             messages = self.inbox.search("has:attachment", full=True,
-                                         limit=per_page, offset=offset)
+                    limit=per_page, offset=offset)
             if len(messages) == 0:
                 break
             for msg in messages:
@@ -145,7 +148,11 @@ class GmailImageExtractor(object):
                         safe_fname = sanatize_filename(poss_fname)
                         fname = unique_filename(self.dest, safe_fname)
 
-                        _cb('image', att.name(), fname)
+                        #encodes the image to base64 to send over websocket
+                        encoded_img = base64.b64encode(att.body())
+
+                        #send attachment name, unique filename, and image to frontend
+                        _cb('image', att.name(), fname, encoded_img)
                         h = open(os.path.join(self.dest, fname), 'w')
                         h.write(att.body())
                         h.close()
