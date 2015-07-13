@@ -25,7 +25,7 @@ jQuery(function ($) {
   update_results, //added 
   img_id = 0,
   hide_results, //added
-  selected_imgs,
+  selected_imgs = [],
     ws = new WebSocket("ws://" + loc.host + "/ws");
 
   //added
@@ -55,7 +55,7 @@ jQuery(function ($) {
     $results_container.append('<div class="col-xs-6 col-md-3">' + 
                               '<div class="thumbnail" id="' + ++img_id + '">' +
                               '<div class="caption">' +
-                              '<input class="img-checkbox" name="' + fname + '" type="checkbox">' +
+                              '<input class="img-checkbox" name="' + img_fname + '" type="checkbox">' +
                               '</div>' + 
                               '</div>' + 
                               '</div>');
@@ -165,9 +165,27 @@ jQuery(function ($) {
     return false;
   });
 
-  $(document).on( "click", "img-checkbox", function() {
+  /* Adds the unique filenames (fname is this function) to an array
+   * that is sent back to the server for deletion   
+   */
+  $(document).on( "click", "input.img-checkbox", function() {
 
+    var fname = $(this).attr("name");
+    var is_checked = $(this).prop("checked");
 
+    //checkbox is clicked, save filename in an array
+    if(is_checked){
+
+      selected_imgs.push(fname);
+      console.log(selected_imgs);
+    }
+    //checkbox is unclicked, remove filename from the array
+    else {
+
+      var index = selected_imgs.indexOf(fname); 
+      selected_imgs.splice(index, 1);
+      console.log(selected_imgs);
+    }
   });
 
   ws.onmessage = function (evt) {

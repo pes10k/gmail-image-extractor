@@ -3,18 +3,16 @@ import pygmail.errors
 from .fs import sanatize_filename, unique_filename
 from pygmail.account import Account
 import base64
-import time #temp
 
 
 ATTACHMENT_MIMES = ('image/jpeg', 'image/png', 'image/gif')
 
 class GmailImageExtractor(object):
-    """Image extrating class which handles connecting to gmail on behalf of
+    """Image extracting class which handles connecting to gmail on behalf of
     a user over IMAP, extracts images from messages in a Gmail account,
-    writes them to disk, allows users to delete extracted images, and then
-    syncronizes the messages in the gmail account by deleting any images
-    deleted from the file system from their corresponding message in the
-    account.
+    sends them over websockets to be displayed on a web page, allows users, and 
+    then syncronizes the messages in the gmail account by deleting the 
+    images the user selected in the web interface.
     """
 
     def __init__(self, dest, email, password, limit=None, batch=10, replace=False):
@@ -99,8 +97,8 @@ class GmailImageExtractor(object):
         return len(gm_ids)
 
     def extract(self, callback=None):
-        """Extracts images from Gmail messages and writes them to the
-        path set at instantiation.
+        """Extracts images from Gmail messages, encodes them into strings,
+        and sends them via websocket to the frontend.
 
         Keyword Args:
             callback -- An optional function that will be called with updates
@@ -147,17 +145,20 @@ class GmailImageExtractor(object):
                         poss_fname = u"{0} - {1}".format(msg.subject, att.name())
                         safe_fname = sanatize_filename(poss_fname)
                         fname = unique_filename(self.dest, safe_fname)
+                        print fname
 
                         #encodes the image to base64 to send over websocket
                         encoded_img = base64.b64encode(att.body())
 
                         #send attachment name, unique filename, and image to frontend
                         _cb('image', att.name(), fname, encoded_img)
-                        h = open(os.path.join(self.dest, fname), 'w')
-                        h.write(att.body())
-                        h.close()
+
+                        #h = open(os.path.join(self.dest, fname), 'w')
+                        #h.write(att.body())
+                        #h.close()
 
                         self.mapping[fname] = msg.gmail_id, att.sha1(), msg.subject
+                        print self.mapping[fname]
                         attachment_count += 1
                 num_messages += 1
                 if self.limit > 0 and num_messages >= self.limit:
