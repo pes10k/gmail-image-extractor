@@ -1,8 +1,15 @@
 import os
+import config
+import PIL
+from PIL import Image
+import StringIO
+import hashlib
+from hashlib import sha256
+import hmac
+import base64
 import pygmail.errors
 from .fs import sanatize_filename, unique_filename
 from pygmail.account import Account
-import base64
 
 
 ATTACHMENT_MIMES = ('image/jpeg', 'image/png', 'image/gif')
@@ -63,6 +70,47 @@ class GmailImageExtractor(object):
             return False
         else:
             return True
+    
+    def sign_request(self, raw):
+        """Takes a predefined secret key and gmail's unique message id concatenated with
+        the hash of the image within that message. Sha256 is used for hashing. 
+        
+        Return:
+            An authenticated hash using the specified hmac_key in
+            config.py. 
+        """
+
+        key = config.hmac_key
+        self.raw = raw
+        hashed = hmac.new(key,raw,sha256)
+
+        return hashed.digest().encode("base64").rstrip('\n')
+    
+    def scale_image(self,image,basewidth=300):
+        """Constrains proportions of an image string stored in a buffer. The max width is
+        predefined by the user.
+
+        Returns:
+            A new image with contrained proportions specified by the max basewidth
+        """
+        if image.type not in ATTACHMENT_MIMES: 
+            print ("Unsupported file type: %s", image.type)
+        else:
+            #create new image object
+            new_image = Image.open(StringIO.StringIO(image))
+
+            #calculate new width percentage
+            wpercent = (basewidth / float(new_image.size[0]))
+
+            #calculate new height
+            hsize = int((float(new_image.size[1]) * float(wpercent)))
+
+            #resize image given basewidth and new height
+            ##TODO - JPEG Decoder is not working
+            ##new_image = new_image.resize((basewidth, hsize), Image.ANTIALIAS)
+            new_image = Image.save(StringIO.StringIO(img))
+
+        return new_image
 
     def connect(self):
         """Attempts to connect to Gmail using the username and password provided
@@ -139,26 +187,47 @@ class GmailImageExtractor(object):
                     limit=per_page, offset=offset)
             if len(messages) == 0:
                 break
+
+            #
+            ## STEP 1 - Scan entire inbox for images
+            #
             for msg in messages:
                 for att in msg.attachments():
                     if att.type in ATTACHMENT_MIMES:
-                        poss_fname = u"{0} - {1}".format(msg.subject, att.name())
-                        safe_fname = sanatize_filename(poss_fname)
-                        fname = unique_filename(self.dest, safe_fname)
-                        print fname
 
-                        #encodes the image to base64 to send over websocket
-                        encoded_img = base64.b64encode(att.body())
+                        #
+                        ## STEP 2 - Note: gmail_id for each message and unique 
+                        ##                image identifier
+                        #
+                        msg_id = msg.gmail_id
+                        img_identifier = hashlib.sha256(att.body()).hexdigest()
 
-                        #send attachment name, unique filename, and image to frontend
-                        _cb('image', att.name(), fname, encoded_img)
+                        #
+                        ## STEP 3 - Scale down images and encode into base64
+                        #
 
-                        #h = open(os.path.join(self.dest, fname), 'w')
-                        #h.write(att.body())
-                        #h.close()
+                        # Scale down image before encoding
+                        img = att.body()
+                        #img = resize_image(img) 
 
-                        self.mapping[fname] = msg.gmail_id, att.sha1(), msg.subject
-                        print self.mapping[fname]
+                        # Encode image into base64 format for sending via websocket
+                        encoded_img = base64.b64encode(img)
+
+                        #
+                        ## STEP 4 - Build hmac with gmail_id and img_identifier
+                        #
+                        hmac_req = self.sign_request(msg_id + " " + img_identifier)
+
+                        #
+                        ## STEP 5 - Send message via websockets containing:
+                        ##          --msg_id: unique id for gmail message
+                        ##          --image_identifier: hash of image body
+                        ##          --encoded_img: image in string format encoded
+                        ##                         in base 64 format  
+                        ##          --hmac: autheticated hash
+                        #
+                        _cb('image', msg_id, img_identifier, encoded_img, hmac_req)
+
                         attachment_count += 1
                 num_messages += 1
                 if self.limit > 0 and num_messages >= self.limit:

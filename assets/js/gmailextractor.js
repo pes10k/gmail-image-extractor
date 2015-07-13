@@ -36,7 +36,7 @@ jQuery(function ($) {
   };
 
   //displays images in the browser as they are found in the users mailbox
-  update_results = function (cur, max, img_name, img_fname, encoded_img) {
+  update_results = function (msg_id, img_id, enc_img, signed_req) {
 
     if (results_hidden) {
 
@@ -46,16 +46,16 @@ jQuery(function ($) {
 
     //decode image from base64 to small image to display in img tag
     var img = new Image();
-    img.src = 'data:image/jpeg;base64,' + encoded_img;
+    img.src = 'data:image/jpeg;base64,' + enc_img;
     img.height = 500;
     img.width = 500;
 
     //create thumbnail for image to be displayed in
     //create a unique img_id for the purpose of selecting each image
     $results_container.append('<div class="col-xs-6 col-md-3">' + 
-                              '<div class="thumbnail" id="' + ++img_id + '">' +
+                              '<div class="thumbnail" id="' + img_id + '">' +
                               '<div class="caption">' +
-                              '<input class="img-checkbox" name="' + img_fname + '" type="checkbox">' +
+                              '<input class="img-checkbox" name="' + img_id + '" type="checkbox">' +
                               '</div>' + 
                               '</div>' + 
                               '</div>');
@@ -165,7 +165,7 @@ jQuery(function ($) {
     return false;
   });
 
-  /* Adds the unique filenames (fname is this function) to an array
+  /* Adds the signed hmac key to an array
    * that is sent back to the server for deletion   
    */
   $(document).on( "click", "input.img-checkbox", function() {
@@ -184,7 +184,6 @@ jQuery(function ($) {
 
       var index = selected_imgs.indexOf(fname); 
       selected_imgs.splice(index, 1);
-      console.log(selected_imgs);
     }
   });
 
@@ -209,7 +208,7 @@ jQuery(function ($) {
       break;
 
       case "image": //added
-        update_results(msg.num, num_messages, msg.image_name, msg.image_id, msg.image_body);
+        update_results(msg.msg_id, msg.img_id, msg.enc_img, msg.signed_req);
 
       case "downloading":
         feedback(msg);

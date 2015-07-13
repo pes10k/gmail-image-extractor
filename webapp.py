@@ -66,9 +66,10 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                 if args[0] == 'image':
                     self.write_message({"ok": True,
                                       "type": "image",
-                                      "image_name": args[1],
-                                      "image_id": args[2],
-                                      "image_body": args[3]});
+                                      "msg_id": args[1],
+                                      "img_id": args[2],
+                                      "enc_img": args[3],
+                                      "hmac_key": args[4]});
 
                 if args[0] == 'message':
                     status_msg = u"Fetching messages {1} - {2}".format(msg['simultaneous'], args[1], num_messages)
