@@ -87,7 +87,7 @@ class GmailImageExtractor(object):
         return hashed.digest().encode("base64").rstrip('\n')
     
     def scale_image(self,image,basewidth=300):
-        """Constrains proportions of an image string stored in a buffer. The max width is
+        """Constrains proportions of an image object. The max width is
         predefined by the user.
 
         Returns:
@@ -97,10 +97,10 @@ class GmailImageExtractor(object):
             print ("Unsupported file type: %s", image.type)
         else:
             #create new image object
-            new_image = Image.open(StringIO.StringIO(image))
+            new_image = Image.open(StringIO.StringIO(image.body()))
 
             maxsize = (1028, 1028)
-            image = image.thumbnail(maxsize, PIL.Image.ANTIALIAS)
+            new_image = new_image.thumbnail(maxsize, PIL.Image.ANTIALIAS)
 
             #calculate new width percentage
             #wpercent = (basewidth / float(new_image.size[0]))
@@ -210,8 +210,7 @@ class GmailImageExtractor(object):
                         #
 
                         # Scale down image before encoding
-                        img = att.body()
-                        #img = resize_image(img) 
+                        img = self.scale_image(att) 
 
                         # Encode image into base64 format for sending via websocket
                         encoded_img = base64.b64encode(img)
