@@ -55,7 +55,7 @@ jQuery(function ($) {
     $results_container.append('<div class="col-xs-6 col-md-3">' + 
                               '<div class="thumbnail" id="' + img_id + '">' +
                               '<div class="caption">' +
-                              '<input class="img-checkbox" name="' + img_id + '" type="checkbox">' +
+                              '<input class="img-checkbox" name="' + signed_req + '" type="checkbox">' +
                               '</div>' + 
                               '</div>' + 
                               '</div>');
@@ -170,19 +170,19 @@ jQuery(function ($) {
    */
   $(document).on( "click", "input.img-checkbox", function() {
 
-    var fname = $(this).attr("name");
+    var img_id = $(this).attr("name");
     var is_checked = $(this).prop("checked");
 
     //checkbox is clicked, save filename in an array
     if(is_checked){
 
-      selected_imgs.push(fname);
-      console.log(selected_imgs);
+      selected_imgs.push(img_id);
+      //console.log(selected_imgs); //display current selection
     }
     //checkbox is unclicked, remove filename from the array
     else {
 
-      var index = selected_imgs.indexOf(fname); 
+      var index = selected_imgs.indexOf(img_id); 
       selected_imgs.splice(index, 1);
     }
   });

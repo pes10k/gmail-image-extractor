@@ -99,11 +99,14 @@ class GmailImageExtractor(object):
             #create new image object
             new_image = Image.open(StringIO.StringIO(image))
 
+            maxsize = (1028, 1028)
+            image = image.thumbnail(maxsize, PIL.Image.ANTIALIAS)
+
             #calculate new width percentage
-            wpercent = (basewidth / float(new_image.size[0]))
+            #wpercent = (basewidth / float(new_image.size[0]))
 
             #calculate new height
-            hsize = int((float(new_image.size[1]) * float(wpercent)))
+            #hsize = int((float(new_image.size[1]) * float(wpercent)))
 
             #resize image given basewidth and new height
             ##TODO - JPEG Decoder is not working
@@ -153,12 +156,12 @@ class GmailImageExtractor(object):
                         about the image extraction process. If provided,
                         will be called with either the following arguments
 
-                        ('image', attachment_name, disk_name)
-                        when writing a message to disk, where
-                        `attachment_name` is the name of the attachment
-                        as advertised in the Email message, and `disk_name`
-                        is the name of the file as written to disk.
-
+                        ('image', message id, image id, hmac key)
+                        when sending an image via websocket, where
+                        `message_id` is the unqiue id of the message,
+                        image_id is the unque id of a given image, and
+                        hmac key concatenates the message and image id.
+                        
                         ('message', first)
                         when fetching messages from Gmail, where `first` is the
                         index of the current message being downloaded.
