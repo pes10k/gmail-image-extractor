@@ -203,10 +203,8 @@ class GmailImageExtractor(object):
                         #
 
                         # Scale down image before encoding
-                        #TODO - Fix image scling
                         img = self.get_resize_img(att.body(), att.type, 100, 'png') 
-                        #img = att.body()
-                        if len(img) == 0:
+                        if len(img) == 0: #no img was resized
                             continue
 
                         # Encode image into base64 format for sending via websocket

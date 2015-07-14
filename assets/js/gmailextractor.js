@@ -13,9 +13,13 @@ jQuery(function ($) {
     $auth_form = $("#auth-form"),
     $auth_fields = $auth_form.find(":input"),
     $alert = $(".alert"),
-    $sync_form = $("#sync-form"),
+    //$sync_form = $("#sync-form"),
     $confim_form = $("#confirm-form"),
     $no_confirm_bttn = $confim_form.find("[type=cancel]"),
+    $delete_selection = $("#delete-selection"),
+    $select_all = $("#select-all"),
+    select_bool = false,
+    $image_menu = $("#image-menu"),
     rewrite_index = 0,
     rewrite_total = 0,
     feedback,
@@ -47,23 +51,17 @@ jQuery(function ($) {
     //decode image from base64 to small image to display in img tag
     var img = new Image();
     img.src = 'data:image/jpeg;base64,' + enc_img;
-    //img.height = 500;
-    //img.width = 500;
 
     //create thumbnail for image to be displayed in
     //create a unique img_id for the purpose of selecting each image
     $results_container.append('<div class="col-xs-6 col-md-3">' + 
-                              '<div class="thumbnail" id="' + img_id + '">' +
-                              '<div class="caption">' +
-                              '<input class="img-checkbox" name="' + signed_req + '" type="checkbox">' +
-                              '</div>' + 
+                              '<div class="thumbnail">' +
+                              '<input class="img-checkbox" id="' + img_id + '" name="' + signed_req + '" type="checkbox">' +
+                              '<img src="' + img.src + '">' +
                               '</div>' + 
                               '</div>');
-    //place image in thumbnail
-    $('#' + img_id).append(img);
   };
-
-  hide_progress = function () {
+hide_progress = function () {
     $prog_container.fadeOut();
     prog_hidden = true;
   };
@@ -117,6 +115,23 @@ jQuery(function ($) {
     }
   };
 
+  $select_all.click(function(){
+
+    //select all inputs if not selected
+    if(select_bool === false){
+      //$("input").prop("checked", true);  
+      $("input").trigger( "click" );
+      select_bool = true;
+    }
+
+    //deselect all inputs if selected
+    else {
+      $("input").trigger( "click" );
+      //$("input").prop("checked", false);  
+      select_bool = false;
+    }
+  });
+
   $auth_form.submit(function () {
 
     var params = JSON.stringify({
@@ -134,13 +149,28 @@ jQuery(function ($) {
     return false;
   });
 
-  $sync_form.submit(function () {
+  /*
+     $sync_form.submit(function () {
+
+     var params = JSON.stringify({
+     "type": "sync"
+     });
+
+     $(this).find("[type=submit]").attr("disabled", "disabled");
+     ws.send(params);
+
+     return false;
+     });
+     */
+
+  //TODO - sync selected images for deletion with web server
+  $delete_selection.submit(function () {
 
     var params = JSON.stringify({
-      "type": "sync"
+      "type": "delete",
+      "selection": selected_imgs 
     });
 
-    $(this).find("[type=submit]").attr("disabled", "disabled");
     ws.send(params);
 
     return false;
@@ -170,14 +200,13 @@ jQuery(function ($) {
    */
   $(document).on( "click", "input.img-checkbox", function() {
 
-    var img_id = $(this).attr("name");
+    var img_id = [ $(this).attr("name"), $(this).attr("id") ];
     var is_checked = $(this).prop("checked");
 
     //checkbox is clicked, save filename in an array
     if(is_checked){
 
       selected_imgs.push(img_id);
-      //console.log(selected_imgs); //display current selection
     }
     //checkbox is unclicked, remove filename from the array
     else {
@@ -189,7 +218,6 @@ jQuery(function ($) {
 
   ws.onmessage = function (evt) {
     var msg = JSON.parse(evt.data);
-    //console.log(msg); //added
 
     switch (msg['type']) {
 
@@ -208,7 +236,8 @@ jQuery(function ($) {
       break;
 
       case "image": //added
-        update_results(msg.msg_id, msg.img_id, msg.enc_img, msg.signed_req);
+        $image_menu.fadeIn();
+      update_results(msg.msg_id, msg.img_id, msg.enc_img, msg.hmac_key);
 
       case "downloading":
         feedback(msg);
@@ -218,13 +247,13 @@ jQuery(function ($) {
       case "download-complete":
         feedback(msg, "Please check all attachments you'd like removed from your GMail account");
       hide_progress();
-      $sync_form.fadeIn();
+      //$sync_form.fadeIn();
       break;
 
       case "file-checking":
         feedback(msg);
       update_progress();
-      $sync_form.fadeOut();
+      //$sync_form.fadeOut();
       break;
 
       case "file-checked":
