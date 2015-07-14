@@ -47,8 +47,8 @@ jQuery(function ($) {
     //decode image from base64 to small image to display in img tag
     var img = new Image();
     img.src = 'data:image/jpeg;base64,' + enc_img;
-    img.height = 500;
-    img.width = 500;
+    //img.height = 500;
+    //img.width = 500;
 
     //create thumbnail for image to be displayed in
     //create a unique img_id for the purpose of selecting each image

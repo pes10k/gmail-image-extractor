@@ -85,35 +85,28 @@ class GmailImageExtractor(object):
         hashed = hmac.new(key,raw,sha256)
 
         return hashed.digest().encode("base64").rstrip('\n')
-    
-    def scale_image(self,image,basewidth=300):
-        """Constrains proportions of an image object. The max width is
-        predefined by the user.
+
+    def get_resize_img(self, img, img_type, basewidth=100, supported_formats = ('jpeg','gif','png')):
+        """Constrains proportions of an image object. The max width and support image formats are
+        predefined by this function by default.
 
         Returns:
             A new image with contrained proportions specified by the max basewidth
         """
-        if image.type not in ATTACHMENT_MIMES: 
-            print ("Unsupported file type: %s", image.type)
+        img_type = img_type.split("/")[1]
+        
+        if img_type in supported_formats:
+            buffer = StringIO.StringIO()
+            img_object = Image.open(StringIO.StringIO(img))
+            wpercent = (basewidth / float(img_object.size[0]))
+            hsize = int((float(img_object.size[1]) * float(wpercent)))
+            img = img_object.resize((basewidth,hsize), Image.NEAREST) ##TODO - JPEG Decoder is not working
+            format = img_type
+            img_object.save(buffer,format)
+
+            return buffer.getvalue()
         else:
-            #create new image object
-            new_image = Image.open(StringIO.StringIO(image.body()))
-
-            maxsize = (1028, 1028)
-            new_image = new_image.thumbnail(maxsize, PIL.Image.ANTIALIAS)
-
-            #calculate new width percentage
-            #wpercent = (basewidth / float(new_image.size[0]))
-
-            #calculate new height
-            #hsize = int((float(new_image.size[1]) * float(wpercent)))
-
-            #resize image given basewidth and new height
-            ##TODO - JPEG Decoder is not working
-            ##new_image = new_image.resize((basewidth, hsize), Image.ANTIALIAS)
-            new_image = Image.save(StringIO.StringIO(img))
-
-        return new_image
+            return ""
 
     def connect(self):
         """Attempts to connect to Gmail using the username and password provided
@@ -161,7 +154,7 @@ class GmailImageExtractor(object):
                         `message_id` is the unqiue id of the message,
                         image_id is the unque id of a given image, and
                         hmac key concatenates the message and image id.
-                        
+
                         ('message', first)
                         when fetching messages from Gmail, where `first` is the
                         index of the current message being downloaded.
@@ -210,7 +203,11 @@ class GmailImageExtractor(object):
                         #
 
                         # Scale down image before encoding
-                        img = self.scale_image(att) 
+                        #TODO - Fix image scling
+                        img = self.get_resize_img(att.body(), att.type, 100, 'png') 
+                        #img = att.body()
+                        if len(img) == 0:
+                            continue
 
                         # Encode image into base64 format for sending via websocket
                         encoded_img = base64.b64encode(img)
