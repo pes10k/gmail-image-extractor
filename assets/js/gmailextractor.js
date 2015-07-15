@@ -117,18 +117,31 @@ hide_progress = function () {
 
   $select_all.click(function(){
 
+    var img_id = [];
+
     //select all inputs if not selected
     if(select_bool === false){
-      //$("input").prop("checked", true);  
-      $("input").trigger( "click" );
+
+      $("input.img-checkbox").prop("checked", true);  
+
+      $("input.img-checkbox").each(function(){
+        img_id.push([$(this).attr("name"), $(this).attr("id")]); 
+      }); 
+
       select_bool = true;
+
+      //push all selected images to selected images array
+      selected_imgs.push(img_id);
     }
 
     //deselect all inputs if selected
     else {
-      $("input").trigger( "click" );
-      //$("input").prop("checked", false);  
+
+      $("input").prop("checked", false);  
       select_bool = false;
+
+      //pop all selected images in selected images array
+      selected_imgs = [];
     }
   });
 
@@ -201,7 +214,7 @@ hide_progress = function () {
   $(document).on( "click", "input.img-checkbox", function() {
 
     var img_id = [ $(this).attr("name"), $(this).attr("id") ];
-    var is_checked = $(this).prop("checked");
+    var is_checked = $(this).prop('checked');
 
     //checkbox is clicked, save filename in an array
     if(is_checked){
