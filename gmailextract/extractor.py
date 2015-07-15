@@ -203,7 +203,7 @@ class GmailImageExtractor(object):
                         #
 
                         # Scale down image before encoding
-                        img = self.get_resize_img(att.body(), att.type, 100, 'png') 
+                        img = self.get_resize_img(att.body(), att.type, 100, ('png', 'gif')) 
                         if len(img) == 0: #no img was resized
                             continue
 
