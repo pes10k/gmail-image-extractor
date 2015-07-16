@@ -13,10 +13,10 @@ jQuery(function ($) {
     $auth_form = $("#auth-form"),
     $auth_fields = $auth_form.find(":input"),
     $alert = $(".alert"),
-    //$sync_form = $("#sync-form"),
+    $sync_form = $("#sync-form"),
     $confim_form = $("#confirm-form"),
     $no_confirm_bttn = $confim_form.find("[type=cancel]"),
-    $delete_selection = $("#delete-selection"),
+    $delete = $("#delete"),
     $select_all = $("#select-all"),
     select_bool = false,
     $image_menu = $("#image-menu"),
@@ -28,7 +28,7 @@ jQuery(function ($) {
   hide_progress,
   update_results, //added 
   img_id = 0,
-  hide_results, //added
+    hide_results, //added
   selected_imgs = [],
     ws = new WebSocket("ws://" + loc.host + "/ws");
 
@@ -61,7 +61,7 @@ jQuery(function ($) {
                               '</div>' + 
                               '</div>');
   };
-hide_progress = function () {
+  hide_progress = function () {
     $prog_container.fadeOut();
     prog_hidden = true;
   };
@@ -132,6 +132,9 @@ hide_progress = function () {
 
       //push all selected images to selected images array
       selected_imgs.push(img_id);
+
+      //change name of button to deselect all
+      $("#select-all").text("Deselect All");
     }
 
     //deselect all inputs if selected
@@ -142,6 +145,9 @@ hide_progress = function () {
 
       //pop all selected images in selected images array
       selected_imgs = [];
+
+      //change name of button to select all
+      $("#select-all").text("Select All");
     }
   });
 
@@ -162,7 +168,6 @@ hide_progress = function () {
     return false;
   });
 
-  /*
      $sync_form.submit(function () {
 
      var params = JSON.stringify({
@@ -174,19 +179,18 @@ hide_progress = function () {
 
      return false;
      });
-     */
 
   //TODO - sync selected images for deletion with web server
-  $delete_selection.submit(function () {
+  $delete.click(function () {
+
+    console.log(" pressed");
 
     var params = JSON.stringify({
       "type": "delete",
-      "selection": selected_imgs 
     });
 
     ws.send(params);
 
-    return false;
   });
 
   $confim_form.submit(function () {

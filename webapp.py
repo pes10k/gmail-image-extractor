@@ -15,15 +15,18 @@ if not os.path.isdir(attr_dir):
 tpl_loader = tornado.template.Loader(os.path.join(root_dir, 'templates'))
 state = {}
 
+
 def plural(msg, num):
     if num == 1:
         return msg
     else:
         return u"{0}s".format(msg)
 
+
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.write(tpl_loader.load("main.html").generate(home_dir=attr_dir))
+
 
 class SocketHandler(tornado.websocket.WebSocketHandler):
 
@@ -37,6 +40,8 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             self._handle_sync(msg)
         elif msg['type'] == 'confirm':
             self._handle_confirmation(msg)
+        elif msg['type'] == 'delete':
+            print "delete!"  # TODO
         else:
             return
 
@@ -57,22 +62,22 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             num_messages = state['extractor'].num_messages_with_attachments()
             self.write_message({'ok': True,
                                 "type": "count",
-                                "msg": u"Found {0} {1} with attachments".format(num_messages, plural(u"message", num_messages)),
+                                "msg": u"Found {0} {1} with attachments"
+                                "".format(num_messages, plural(u"message", num_messages)),
                                 "num": num_messages})
 
             def _status(*args):
-
-                #added
                 if args[0] == 'image':
                     self.write_message({"ok": True,
-                                      "type": "image",
-                                      "msg_id": args[1],
-                                      "img_id": args[2],
-                                      "enc_img": args[3],
-                                      "hmac_key": args[4]});
+                                        "type": "image",
+                                        "msg_id": args[1],
+                                        "img_id": args[2],
+                                        "enc_img": args[3],
+                                        "hmac_key": args[4]})
 
                 if args[0] == 'message':
-                    status_msg = u"Fetching messages {1} - {2}".format(msg['simultaneous'], args[1], num_messages)
+                    status_msg = u"Fetching messages {1} - {2}".format(msg['simultaneous'],
+                                                                       args[1], num_messages)
                     self.write_message({"ok": True,
                                         "type": "downloading",
                                         "msg": status_msg,
@@ -81,20 +86,22 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             attachment_count = state['extractor'].extract(_status)
             self.write_message({"ok": True,
                                 "type": "download-complete",
-                                "msg": "Succesfully found {0} {1}".format(attachment_count, plural(u"image", attachment_count)),
+                                "msg": "Succesfully found {0} {1}"
+                                "".format(attachment_count, plural(u"image", attachment_count)),
                                 "num": attachment_count})
 
-    def _handle_sync(self, msg):
-        extractor = state['extractor']
+        def _handle_sync(self, msg):
+            extractor = state['extractor']
 
-        self.write_message({"ok": True,
-                            "type": "file-checking",
-                            "msg": u"Checking to see which files have been deleted."})
-        num_deletions = extractor.check_deletions()
-        self.write_message({"ok": True,
-                            "type": "file-checked",
-                            "msg": u"Found {0} {1} deleted".format(num_deletions, plural(u"image", num_deletions)),
-                            "num": num_deletions})
+            self.write_message({"ok": True,
+                                "type": "file-checking",
+                                "msg": u"Checking to see which files have been deleted."})
+            num_deletions = extractor.check_deletions()
+            self.write_message({"ok": True,
+                                "type": "file-checked",
+                                "msg": u"Found {0} {1} deleted"
+                                "".format(num_deletions, plural(u"image", num_deletions)),
+                                "num": num_deletions})
 
     def _handle_confirmation(self, msg):
         extractor = state['extractor']
@@ -104,19 +111,22 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             if update_type == "fetch":
                 self.write_message({"ok": True,
                                     "type": "removing",
-                                    "msg": u"Removing {0} {1} from message '{2}'.".format(args[2], args[1], plural(u"image", args[2]))})
+                                    "msg": u"Removing {0} {1} from message '{2}'."
+                                    "".format(args[2], args[1], plural(u"image", args[2]))})
             elif update_type == "write":
                 self.write_message({"ok": True,
                                     "type": "removed",
-                                    "msg": u"Writing altered version of '{0}' to Gmail.".format(args[1])})
+                                    "msg": u"Writing altered version of '{0}' to Gmail."
+                                    "".format(args[1])})
 
         num_attch_removed, num_msg_changed = extractor.sync(callback=_sync_status)
         self.write_message({"ok": True,
                             "type": "finished",
-                            "msg": u"Removed {0} {1} from {2} {3}.".format(num_attch_removed,
-                                                                               plural(u"image", num_attch_removed),
-                                                                               num_msg_changed,
-                                                                               plural(u"message", num_msg_changed))})
+                            "msg": u"Removed {0} {1} from {2} {3}."
+                            "".format(num_attch_removed,
+                                      plural(u"image", num_attch_removed),
+                                      num_msg_changed,
+                                      plural(u"message", num_msg_changed))})
 
     def on_close(self):
         state['extractor'] = None
@@ -124,7 +134,8 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
 if __name__ == "__main__":
     application = tornado.web.Application([
-        (r"/assets/(.*)", tornado.web.StaticFileHandler, {"path": os.path.join(root_dir, 'assets')}),
+        (r"/assets/(.*)", tornado.web.StaticFileHandler, {"path": os.path.join(root_dir,
+                                                                               'assets')}),
         (r'/ws', SocketHandler),
         (r"/", MainHandler),
     ])
