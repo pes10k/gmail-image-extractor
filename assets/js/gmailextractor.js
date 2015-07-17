@@ -58,7 +58,9 @@ jQuery(function ($) {
 								  '<div class="thumbnail">' +
 								  '<input class="img-checkbox" id="' + img_id + 
 								  '" name="' + signed_req + '" type="checkbox">' +
-								  '<img src="' + img.src + '">' +
+								  '<a href="javascript:void(0)" onclick="previewImage(\''+img.src+'\')">' + 
+								  '<img src="' + img.src + '">' + 
+								  '</a>' +
 								  '</div>' + 
 								  '</div>');
 	};
@@ -114,6 +116,12 @@ jQuery(function ($) {
 			$alert.text(msg.msg);
 
 		}
+	};
+
+	previewImage = function (image_body) {
+		console.log(image_body);
+		$("#imagePreview").attr("src", image_body);
+		$("#imageModal").modal('show');
 	};
 
 	$select_all.click(function(){
@@ -272,7 +280,7 @@ jQuery(function ($) {
 			$type.text(msg + " Images");
 		}
 		else{
-			
+
 			return; //an error has occured
 		}
 	};

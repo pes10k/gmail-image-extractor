@@ -6,6 +6,7 @@ import tornado.escape
 import os
 from os.path import expanduser
 from gmailextract.extractor import GmailImageExtractor
+import config
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 attr_dir = os.path.join(expanduser("~"), "Gmail Images")
@@ -141,5 +142,5 @@ if __name__ == "__main__":
         (r'/ws', SocketHandler),
         (r"/", MainHandler),
     ])
-    application.listen(8888)
+    application.listen(config.port)
     tornado.ioloop.IOLoop.instance().start()

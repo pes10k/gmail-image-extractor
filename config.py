@@ -1,10 +1,7 @@
 """Basic server configuration options for the Gmail Image Extractor app"""
 
 # Main port that Tornado should listen over for serving web pages
-port = 80
-
-# Port that all socket_io / websocket traffic should go over
-socket_io_port = 8888
+port = 8888
 
 # The name of the site, which will appear in <title />, <h1 />, etc.
 site_name = "Gmail Image Extractor"
