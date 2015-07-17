@@ -183,8 +183,6 @@ jQuery(function ($) {
   //TODO - sync selected images for deletion with web server
   $delete.click(function () {
 
-    console.log(" pressed");
-
     var params = JSON.stringify({
       "type": "delete",
     });
