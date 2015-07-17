@@ -136,6 +136,7 @@ jQuery(function ($) {
 
 			//change name of button to deselect all
 			$("#select-all").text("Deselect All");
+
 		}
 
 		//deselect all inputs if selected
@@ -150,6 +151,10 @@ jQuery(function ($) {
 			//change name of button to select all
 			$("#select-all").text("Select All");
 		}
+		//change delete button state
+		num_checked = count_checked();
+		changeBtnState(num_checked, "delete");
+		changeBtnState(num_checked, "save");
 	});
 
 	//on click sends selected images to server to retreive full sized images
@@ -204,11 +209,12 @@ jQuery(function ($) {
 		return false;
 	});
 
-	//TODO - sync selected images for deletion with web server
+	//sends currently selected images to the backend for removal
 	$delete.click(function () {
 
 		var params = JSON.stringify({
-			"type": "delete",
+			"type" : "delete",
+			"image" : selected_imgs
 		});
 
 		ws.send(params);
@@ -234,13 +240,54 @@ jQuery(function ($) {
 		return false;
 	});
 
-	/* Adds the signed hmac key to an array
-	 * that is sent back to the server for deletion   
+	var count_checked = function() {
+		return $( "input:checked" ).length;
+	};
+
+	String.prototype.capitalizeFirstLetter = function(){
+		return this.charAt(0).toUpperCase() + this.slice(1);
+	};
+
+	var changeBtnState = function(value, msg){
+
+		msg = msg.toLowerCase();
+
+		var $type = $( "#" + msg);
+
+		msg = msg.capitalizeFirstLetter();
+
+		if(value === 0){
+
+			$type.addClass("disabled");
+			$type.text(msg + " Image");
+		}
+		else if(value === 1){
+
+			$type.removeClass("disabled");
+			$type.text(msg + " Image");
+		}
+		else if(value > 1){
+
+			$type.removeClass("disabled");
+			$type.text(msg + " Images");
+		}
+		else{
+			
+			return; //an error has occured
+		}
+	};
+
+	/* 
+	 * Adds the signed hmac key to an array
 	 */
 	$(document).on( "click", "input.img-checkbox", function() {
 
 		var img_id = [ $(this).attr("name"), $(this).attr("id") ];
 		var is_checked = $(this).prop('checked');
+		var num_checked = count_checked();
+
+		changeBtnState(num_checked, "delete");
+		changeBtnState(num_checked, "save");
 
 		//checkbox is clicked, save filename in an array
 		if(is_checked){
