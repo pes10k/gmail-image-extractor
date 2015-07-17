@@ -41,7 +41,9 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         elif msg['type'] == 'confirm':
             self._handle_confirmation(msg)
         elif msg['type'] == 'delete':
-            print ""
+            print "delete!"  # TODO call delete handle
+        elif msg['type'] == 'save':
+            print "save!"  # TODO call save handle
         else:
             return
 

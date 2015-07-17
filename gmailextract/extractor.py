@@ -17,8 +17,8 @@ ATTACHMENT_MIMES = ('image/jpeg', 'image/png', 'image/gif')
 class GmailImageExtractor(object):
     """Image extracting class which handles connecting to gmail on behalf of
     a user over IMAP, extracts images from messages in a Gmail account,
-    sends them over websockets to be displayed on a web page, allows users, and 
-    then syncronizes the messages in the gmail account by deleting the 
+    sends them over websockets to be displayed on a web page, allows users, and
+    then syncronizes the messages in the gmail account by deleting the
     images the user selected in the web interface.
     """
 
@@ -70,14 +70,14 @@ class GmailImageExtractor(object):
             return False
         else:
             return True
-    
+
     def sign_request(self, raw):
         """Takes a predefined secret key and gmail's unique message id concatenated with
-        the hash of the image within that message. Sha256 is used for hashing. 
-        
+        the hash of the image within that message. Sha256 is used for hashing.
+
         Return:
             An authenticated hash using the specified hmac_key in
-            config.py. 
+            config.py.
         """
 
         key = config.hmac_key
@@ -94,7 +94,7 @@ class GmailImageExtractor(object):
             A new image with contrained proportions specified by the max basewidth
         """
         img_type = img_type.split("/")[1]
-        
+
         if img_type in supported_formats:
             buffer = StringIO.StringIO()
             img_object = Image.open(StringIO.StringIO(img))
@@ -192,7 +192,7 @@ class GmailImageExtractor(object):
                     if att.type in ATTACHMENT_MIMES:
 
                         #
-                        ## STEP 2 - Note: gmail_id for each message and unique 
+                        ## STEP 2 - Note: gmail_id for each message and unique
                         ##                image identifier
                         #
                         msg_id = msg.gmail_id
@@ -203,7 +203,7 @@ class GmailImageExtractor(object):
                         #
 
                         # Scale down image before encoding
-                        img = self.get_resize_img(att.body(), att.type, 100, ('png', 'gif')) 
+                        img = self.get_resize_img(att.body(), att.type, 100, ('png', 'gif'))
                         if len(img) == 0: #no img was resized
                             continue
 
@@ -220,7 +220,7 @@ class GmailImageExtractor(object):
                         ##          --msg_id: unique id for gmail message
                         ##          --image_identifier: hash of image body
                         ##          --encoded_img: image in string format encoded
-                        ##                         in base 64 format  
+                        ##                         in base 64 format
                         ##          --hmac: autheticated hash
                         #
                         _cb('image', msg_id, img_identifier, encoded_img, hmac_req)

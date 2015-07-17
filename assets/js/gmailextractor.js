@@ -154,10 +154,25 @@ jQuery(function ($) {
 
 	//on click sends selected images to server to retreive full sized images
 	$save.click(function(){
+
+		var params = {};
+
 		//if not images are selected, display modal
 		if (selected_imgs.length === 0) {
+
 			$('#saveModal').modal('show');
 		}
+		//send all selected images to backend
+		else {
+
+			params = JSON.stringify({
+				"type": "save",
+				"images": selected_imgs	
+			});
+
+			ws.send(params);
+		}
+
 	});
 
 	$auth_form.submit(function () {
