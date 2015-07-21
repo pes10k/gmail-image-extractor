@@ -42,13 +42,17 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         elif msg['type'] == 'confirm':
             self._handle_confirmation(msg)
         elif msg['type'] == 'delete':
-            print "delete!"  # TODO call delete handle
+            print "delete"
+            self._handle_delete(msg)
         elif msg['type'] == 'save':
             print "save!"  # TODO call save handle
+        elif msg['type'] == 'stop':
+            print "stop!"  # TODO call stop handle
         else:
             return
 
-    def _handle_connect(self, msg):
+    def _handle_connect(self, msg, callback=None):
+
         state['extractor'] = GmailImageExtractor(attr_dir, msg['email'],
                                                  msg['pass'], limit=int(msg['limit']),
                                                  batch=int(msg['simultaneous']),
@@ -70,6 +74,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                                 "num": num_messages})
 
             def _status(*args):
+
                 if args[0] == 'image':
                     self.write_message({"ok": True,
                                         "type": "image",
@@ -133,6 +138,10 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         state['extractor'] = None
+
+    def _handle_delete(self, msg):
+        extractor = state['extractor']
+        extractor.delete()
 
 
 if __name__ == "__main__":
