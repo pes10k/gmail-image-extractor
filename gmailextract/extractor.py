@@ -3,7 +3,6 @@ import config
 # import PIL
 from PIL import Image
 import StringIO
-import hashlib
 from hashlib import sha256
 import hmac
 import base64
@@ -195,9 +194,9 @@ class GmailImageExtractor(object):
                 for att in msg.attachments():
                     if att.type in ATTACHMENT_MIMES:
 
-                        # STEP 2 - Note: gmail_id for each message and unique
+                        # STEP 2 - Note: unique gmail_id for each message
                         msg_id = msg.gmail_id
-                        img_identifier = hashlib.sha256(att.body()).hexdigest()
+                        img_identifier = att.sha1()
 
                         # STEP 3 - Scale down images and encode into base64
 
@@ -210,7 +209,7 @@ class GmailImageExtractor(object):
                         encoded_img = base64.b64encode(img)
 
                         # STEP 4 - Build hmac with gmail_id and img_identifier
-                        hmac_req = self.sign_request(msg_id + " " + img_identifier)
+                        # hmac_req = self.sign_request(msg_id + " " + img_identifier)
 
                         # STEP 5 - Send message via websockets containing:
                         #          --msg_id: unique id for gmail message
@@ -218,7 +217,9 @@ class GmailImageExtractor(object):
                         #          --encoded_img: image in string format encoded
                         #                         in base 64 format
                         #          --hmac: autheticated hash
-                        _cb('image', msg_id, img_identifier, encoded_img, hmac_req)
+                        # _cb('image', msg_id, img_identifier, encoded_img, hmac_req)
+
+                        _cb('image', msg_id, img_identifier, encoded_img, msg_id)
 
                         attachment_count += 1
                         num_messages += 1
@@ -232,7 +233,46 @@ class GmailImageExtractor(object):
         return attachment_count
 
     def delete(self, msg):
-        print msg
+        """Delete images provided by the array msg
+
+        Keyword args:
+            msg --array containing message id, image sha 256 hash
+        """
+
+        if len(msg) == 0:
+            return False  # no images have been selected to be deleted
+
+        # TODO - delete images
+        # gmail_id = msg[0]
+        # step 1 find message with given message id in inbox
+        # msg_to_change = self.inbox.fetch_gm_id(gmail_id, full=True)
+        # step 2 pull all attachments from message
+        # attach_hashes = {a.sha256(): a for a in msg_to_change.attachments()}
+        # step 3 compare attachment hashes in message array with attachments in message
+
+        # print msg['image']
+        # print msg
+        for image in msg['image']:
+            message_id, image_id = image
+            # call_the_dleete_function(message_id,hash)
+
+        images = msg['image']
+        # print images
+
+        try:
+            for image in images:
+                print image
+        except:
+            print "failed"
+
+        # print "attach_hashes = " + attach_hashes
+        # print "msg_to_change = " + msg_to_change
+        # print "gmail_id " + gmail_id
+        # if they match, delete the message
+        # if they don't skip
+
+        # num_msg_changed = 0
+        # num_attch_removed = 0
 
     def check_deletions(self):
         """Checks the filesystem to see which image attachments, downloaded

@@ -119,9 +119,15 @@ jQuery(function ($) {
 	};
 
 	previewImage = function (image_body) {
-		console.log(image_body);
 		$("#imagePreview").attr("src", image_body);
-		$("#imageModal").modal('show');
+		//$("#imageModal").modal('show');
+		$("#imageModal").modal('show', function(){
+			$(this).find('.modal-body').css({
+				width:'auto', //probably not needed
+				height:'auto', //probably not needed 
+				'max-height':'100%'
+			});
+		});
 	};
 
 	$select_all.click(function(){
@@ -308,6 +314,7 @@ jQuery(function ($) {
 			var index = selected_imgs.indexOf(img_id); 
 			selected_imgs.splice(index, 1);
 		}
+		console.log(selected_imgs);
 	});
 
 	ws.onmessage = function (evt) {

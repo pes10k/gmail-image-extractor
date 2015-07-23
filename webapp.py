@@ -42,7 +42,6 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         elif msg['type'] == 'confirm':
             self._handle_confirmation(msg)
         elif msg['type'] == 'delete':
-            print "delete"
             self._handle_delete(msg)
         elif msg['type'] == 'save':
             print "save!"  # TODO call save handle
@@ -141,7 +140,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def _handle_delete(self, msg):
         extractor = state['extractor']
-        extractor.delete()
+        extractor.delete(msg)
 
 
 if __name__ == "__main__":
