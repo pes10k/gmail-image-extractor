@@ -97,18 +97,22 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                                 "".format(attachment_count, plural(u"image", attachment_count)),
                                 "num": attachment_count})
 
-        def _handle_sync(self, msg):
-            extractor = state['extractor']
+    def _handle_delete(self, msg):
+        extractor = state['extractor']
+        extractor.delete(msg)
 
-            self.write_message({"ok": True,
-                                "type": "file-checking",
-                                "msg": u"Checking to see which files have been deleted."})
-            num_deletions = extractor.check_deletions()
-            self.write_message({"ok": True,
-                                "type": "file-checked",
-                                "msg": u"Found {0} {1} deleted"
-                                "".format(num_deletions, plural(u"image", num_deletions)),
-                                "num": num_deletions})
+    def _handle_sync(self, msg):
+        extractor = state['extractor']
+
+        self.write_message({"ok": True,
+                            "type": "file-checking",
+                            "msg": u"Checking to see which files have been deleted."})
+        num_deletions = extractor.check_deletions()
+        self.write_message({"ok": True,
+                            "type": "file-checked",
+                            "msg": u"Found {0} {1} deleted"
+                            "".format(num_deletions, plural(u"image", num_deletions)),
+                            "num": num_deletions})
 
     def _handle_confirmation(self, msg):
         extractor = state['extractor']
@@ -137,11 +141,6 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         state['extractor'] = None
-
-    def _handle_delete(self, msg):
-        extractor = state['extractor']
-        extractor.delete(msg)
-
 
 if __name__ == "__main__":
     application = tornado.web.Application([

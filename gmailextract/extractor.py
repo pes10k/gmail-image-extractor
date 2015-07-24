@@ -232,47 +232,122 @@ class GmailImageExtractor(object):
 
         return attachment_count
 
-    def delete(self, msg):
-        """Delete images provided by the array msg
+    def parse_selected_images(self, selected_images):
+        """Take in a dictionary message containing both unique message
+        identifiers and unique image identifiers and sorts them. This is
+        done because multiple images can be selected for deletion and
+        multiple images can be in the same message.
 
-        Keyword args:
-            msg --array containing message id, image sha 256 hash
+        Returns:
+            TODO
+            a ....... looking like this.....
+            i.e. [[u'12345', u'54312'], [u'12345', u'9879']] becomes
         """
 
-        if len(msg) == 0:
-            return False  # no images have been selected to be deleted
+        img_store = {}
 
-        # TODO - delete images
-        # gmail_id = msg[0]
-        # step 1 find message with given message id in inbox
-        # msg_to_change = self.inbox.fetch_gm_id(gmail_id, full=True)
-        # step 2 pull all attachments from message
-        # attach_hashes = {a.sha256(): a for a in msg_to_change.attachments()}
-        # step 3 compare attachment hashes in message array with attachments in message
+        for gmail_id, attachment_hash in selected_images['image']:
 
-        # print msg['image']
-        # print msg
-        for image in msg['image']:
-            message_id, image_id = image
-            # call_the_dleete_function(message_id,hash)
+            try:
+                img_store[gmail_id].append(attachment_hash)
+            except KeyError:
+                img_store[gmail_id] = [attachment_hash]
 
-        images = msg['image']
-        # print images
+        return img_store
+
+    def do_delete(self, gmail_id, attachment_hash):
+
+        label = "Images redacted"
+
+        removed_attachments = 0
+        num_attch_removed = 0
+        num_msg_changed = 0
+        msg_to_change = None
 
         try:
-            for image in images:
-                print image
+            msg_to_change = self.inbox.fetch_gm_id(gmail_id, full=True)
         except:
-            print "failed"
+            print "Could not fetch the message with gmail_id ", gmail_id
+            return 0, 0
 
-        # print "attach_hashes = " + attach_hashes
-        # print "msg_to_change = " + msg_to_change
-        # print "gmail_id " + gmail_id
-        # if they match, delete the message
-        # if they don't skip
+        attach_hashes = {a.sha1(): a for a in msg_to_change.attachments()}
+        attach_to_delete = attach_hashes[attachment_hash]
 
-        # num_msg_changed = 0
-        # num_attch_removed = 0
+        if attach_to_delete.remove():
+            removed_attachments += 1
+            num_attch_removed += 1
+
+        if removed_attachments:
+            num_msg_changed += 1
+            if self.replace:
+                msg_to_change.save(self.trash_folder.name, safe_label=label)
+            else:
+                msg_to_change.save_copy(label)
+                return num_attch_removed, num_msg_changed
+
+    def delete(self, msg, label='"Images redacted"', callback=None):
+        """Finds image attachments that were downloaded during the
+        self.extract() step, and deletes any attachments that were deleted
+        from disk from their corresponding images in Gmail.
+
+        Keyword Args:
+            label    -- Gmail label to use either as a temporary work label
+            (if instatiated with replace=True) or where the altered
+            images will be stored (if instatiated with
+            replace=False). Note that this label should be in valid
+            ATOM string format.
+            callback -- An optional funciton that will be called with updates
+            about the message update process. If provided,
+            will be called with the following sets of arguments:
+
+                        ('fetch', subject, num_attach)
+                        Called before fetching a message from gmail. `subject`
+                        is the subject of the email message to download, and
+                        `num_attach` is the number of attachments to be removed
+                        from that message.
+
+                        ('write', subject)
+                        Called before writing the altered version of the message
+                        back to Gmail.
+
+        Returns:
+            Two values, first being the number of attachments that were removed
+            from messages in Gmail, and second is the number of messages that
+            were altered.
+            """
+
+        if len(msg) == 0:
+            return 0, 0
+
+        def _cb(*args):
+            if callback:
+                callback(*args)
+
+        image_bank = []
+
+        try:
+            image_bank = self.parse_selected_images(msg)
+        except:
+            print "Couldn't parse selected images properly"
+            return 0, 0
+
+        for gmail_id, attachment_hash in image_bank.iteritems():
+            if len(attachment_hash) == 1:
+                print gmail_id, attachment_hash
+                self.do_delete(gmail_id, attachment_hash)
+                print gmail_id, attachment_hash, "deleted"
+            elif len(attachment_hash) > 1:
+                attachment_hashes = attachment_hash
+                for attachment_hash in attachment_hashes:
+                    # TODO - use callback to send deleted images info
+                    # i.e. num deleted, num changed = do_delete
+                    # cb(num deleted, num changed)
+                    self.do_delete(gmail_id, attachment_hash)
+                    print gmail_id, attachment_hash, "deleted"
+            else:  # some bug has occured and no deletions have been executed
+                return 0, 0
+
+        return 0, 0
 
     def check_deletions(self):
         """Checks the filesystem to see which image attachments, downloaded
@@ -304,7 +379,7 @@ class GmailImageExtractor(object):
                     self.num_deletions += 1
                     return self.num_deletions
 
-    def sync(self, label='"Images redacted"', callback=None):
+    def sync_old(self, label='"Images redacted"', callback=None):
         """Finds image attachments that were downloaded during the
         self.extract() step, and deletes any attachments that were deleted
         from disk from their corresponding images in Gmail.

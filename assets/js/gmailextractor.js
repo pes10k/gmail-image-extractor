@@ -132,6 +132,8 @@ jQuery(function ($) {
 
 	$select_all.click(function(){
 
+		this.addClass("disabled");
+
 		var img_id = [];
 
 		//select all inputs if not selected
@@ -231,6 +233,7 @@ jQuery(function ($) {
 			"image" : selected_imgs
 		});
 
+		console.log(selected_imgs);
 		ws.send(params);
 
 	});
