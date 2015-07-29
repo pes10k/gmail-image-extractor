@@ -237,53 +237,34 @@ class GmailImageExtractor(object):
         identifiers and unique image identifiers and sorts them. This is
         done because multiple images can be selected for deletion and
         multiple images can be in the same message.
-
-        Returns:
-            TODO
-            a ....... looking like this.....
-            i.e. [[u'12345', u'54312'], [u'12345', u'9879']] becomes
         """
 
-        img_store = {}
+        messages_to_change = {}
 
-        for gmail_id, attachment_hash in selected_images['image']:
-
+        for gmail_id, an_attachment in selected_images['image']:
+            message_to_change = self.inbox.fetch_gm_id(gmail_id, full=True)
+            attach_hashes = {a.sha1(): a for a in message_to_change.attachments()}
             try:
-                img_store[gmail_id].append(attachment_hash)
+                messages_to_change[message_to_change.gmail_id].append(attach_hashes[an_attachment])
             except KeyError:
-                img_store[gmail_id] = [attachment_hash]
+                messages_to_change[message_to_change.gmail_id] = [attach_hashes[an_attachment]]
 
-        return img_store
+        return messages_to_change
 
-    def do_delete(self, gmail_id, attachment_hash):
+    def do_delete(self, messages_to_change, callback=None):
 
         label = "Images redacted"
 
-        removed_attachments = 0
-        num_attch_removed = 0
-        num_msg_changed = 0
-        msg_to_change = None
+        def _cb(*args):
+            if callback:
+                callback(*args)
 
-        try:
-            msg_to_change = self.inbox.fetch_gm_id(gmail_id, full=True)
-        except:
-            print "Could not fetch the message with gmail_id ", gmail_id
-            return 0, 0
+        for gmail_id, some_attachments in messages_to_change.iteritems():
+            for an_attachment in some_attachments:
+                an_attachment.remove()
+            some_attachments[0].message.save(self.trash_folder.name, safe_label=label)
 
-        attach_hashes = {a.sha1(): a for a in msg_to_change.attachments()}
-        attach_to_delete = attach_hashes[attachment_hash]
-
-        if attach_to_delete.remove():
-            removed_attachments += 1
-            num_attch_removed += 1
-
-        if removed_attachments:
-            num_msg_changed += 1
-            if self.replace:
-                msg_to_change.save(self.trash_folder.name, safe_label=label)
-            else:
-                msg_to_change.save_copy(label)
-                return num_attch_removed, num_msg_changed
+        return
 
     def delete(self, msg, label='"Images redacted"', callback=None):
         """Finds image attachments that were downloaded during the
@@ -323,31 +304,18 @@ class GmailImageExtractor(object):
             if callback:
                 callback(*args)
 
-        image_bank = []
-
         try:
-            image_bank = self.parse_selected_images(msg)
+            messages = self.parse_selected_images(msg)
         except:
             print "Couldn't parse selected images properly"
-            return 0, 0
+            return
 
-        for gmail_id, attachment_hash in image_bank.iteritems():
-            if len(attachment_hash) == 1:
-                print gmail_id, attachment_hash
-                self.do_delete(gmail_id, attachment_hash)
-                print gmail_id, attachment_hash, "deleted"
-            elif len(attachment_hash) > 1:
-                attachment_hashes = attachment_hash
-                for attachment_hash in attachment_hashes:
-                    # TODO - use callback to send deleted images info
-                    # i.e. num deleted, num changed = do_delete
-                    # cb(num deleted, num changed)
-                    self.do_delete(gmail_id, attachment_hash)
-                    print gmail_id, attachment_hash, "deleted"
-            else:  # some bug has occured and no deletions have been executed
-                return 0, 0
-
-        return 0, 0
+        try:
+            self.do_delete(messages)
+        except:
+            print "Couldn't complete message deletion"
+        finally:
+            return
 
     def check_deletions(self):
         """Checks the filesystem to see which image attachments, downloaded
