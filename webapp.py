@@ -90,12 +90,6 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                                         "msg": status_msg,
                                         "num": args[1]})
 
-                if args[0] == 'deleted':
-                    print args[0], args[1], args[2]
-                    self.write_message({"ok": "deleted",
-                                        "msg_id": args[1],
-                                        "img_id": args[2]})
-
             attachment_count = state['extractor'].extract(_status)
             self.write_message({"ok": True,
                                 "type": "download-complete",
