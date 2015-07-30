@@ -99,7 +99,31 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def _handle_delete(self, msg):
         extractor = state['extractor']
-        extractor.delete(msg)
+
+        def _delete_status(*args):
+            update_type = args[0]
+
+            print(u"Removed {0} out of {1} {2}."
+                  "".format(args[1],
+                            args[2],
+                            plural(u"image", args[2])))
+
+            if update_type == "deleted":
+                self.write_message({"ok": True,
+                                    "type": "removed",
+                                    "msg": u"Removed {0} out of {1} {2}."
+                                    "".format(args[1],
+                                              args[2],
+                                              plural(u"image", args[2]))})
+
+        num_messages_changed, num_images_deleted = extractor.delete(msg, callback=_delete_status)
+        self.write_message({"ok": True,
+                            "type": "finished",
+                            "msg": u"Removed {0} {1} total from {2} {3}."
+                            "".format(num_images_deleted,
+                                      plural(u"image", num_images_deleted),
+                                      num_messages_changed,
+                                      plural(u"message", num_messages_changed))})
 
     def _handle_sync(self, msg):
         extractor = state['extractor']

@@ -249,27 +249,47 @@ class GmailImageExtractor(object):
         ordered_by_gmail_id = dict()
         messages_to_change = dict()
 
+        # first group and order selected images by gmail_id and attachment_id
         for gmail_id, an_attachment in selected_images['image']:
                 try:
                     ordered_by_gmail_id[gmail_id].append(an_attachment)
                 except KeyError:
                     ordered_by_gmail_id[gmail_id] = [an_attachment]
 
+        # replace attachment_id with attachment object from message with corresponding gmail_id
         for gmail_id in ordered_by_gmail_id:
             message_to_change = self.inbox.fetch_gm_id(gmail_id, full=True)
             attach_hashes = {a.sha1(): a for a in message_to_change.attachments()}
-            g_id = message_to_change.gmail_id
             for an_attachment in ordered_by_gmail_id[gmail_id]:
                 try:
-                    messages_to_change[g_id].append(attach_hashes[an_attachment])
+                    messages_to_change[gmail_id].append(attach_hashes[an_attachment])
                 except KeyError:
-                    messages_to_change[g_id] = [attach_hashes[an_attachment]]
+                    messages_to_change[gmail_id] = [attach_hashes[an_attachment]]
 
         return messages_to_change
 
     def do_delete(self, messages_to_change, callback=None):
+        """
+        Itereates through a dictionary of messages selected by the user
+        and deletes attachments within those messages.
+
+        This function must be used in conjuction with parse_selected_images.
+
+        Returns:
+            Number of messages where attachments were removed
+        """
 
         label = "Images redacted"
+
+        num_images_deleted = 0
+        num_images_to_delete = 0
+
+        # calculate total images that need to be deleted
+        for message, some_images in messages_to_change.iteritems():
+            for an_image in some_images:
+                num_images_to_delete += 1
+
+        num_messages_changed = 0
 
         def _cb(*args):
             if callback:
@@ -278,9 +298,12 @@ class GmailImageExtractor(object):
         for gmail_id, some_attachments in messages_to_change.iteritems():
             for an_attachment in some_attachments:
                 an_attachment.remove()
+                num_images_deleted += 1
+                _cb('removed', num_images_deleted, num_images_to_delete)
             some_attachments[0].message.save(self.trash_folder.name, safe_label=label)
+            num_messages_changed += 1
 
-        return
+        return num_messages_changed, num_images_deleted
 
     def delete(self, msg, label='"Images redacted"', callback=None):
         """
@@ -314,12 +337,11 @@ class GmailImageExtractor(object):
         try:
             messages = self.parse_selected_images(msg)
         except:
-            print "Couldn't parse selected images properly"
             return
 
-        self.do_delete(messages)
+        num_messages_changed, num_images_deleted = self.do_delete(messages, callback)
 
-        return
+        return num_messages_changed, num_images_deleted
 
     def check_deletions(self):
         """Checks the filesystem to see which image attachments, downloaded
