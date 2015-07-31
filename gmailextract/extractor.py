@@ -9,6 +9,7 @@ import base64
 import pygmail.errors
 # from .fs import sanatize_filename, unique_filename
 from pygmail.account import Account
+import zipfile
 
 
 ATTACHMENT_MIMES = ('image/jpeg', 'image/png', 'image/gif')
@@ -251,9 +252,9 @@ class GmailImageExtractor(object):
 
         # first group and order selected images by gmail_id and attachment_id
         for gmail_id, an_attachment in selected_images['image']:
-                try:
+                if gmail_id in ordered_by_gmail_id:
                     ordered_by_gmail_id[gmail_id].append(an_attachment)
-                except KeyError:
+                else:
                     ordered_by_gmail_id[gmail_id] = [an_attachment]
 
         # replace attachment_id with attachment object from message with corresponding gmail_id
@@ -261,9 +262,9 @@ class GmailImageExtractor(object):
             message_to_change = self.inbox.fetch_gm_id(gmail_id, full=True)
             attach_hashes = {a.sha1(): a for a in message_to_change.attachments()}
             for an_attachment in ordered_by_gmail_id[gmail_id]:
-                try:
+                if gmail_id in messages_to_change:
                     messages_to_change[gmail_id].append(attach_hashes[an_attachment])
-                except KeyError:
+                else:
                     messages_to_change[gmail_id] = [attach_hashes[an_attachment]]
 
         return messages_to_change
@@ -337,11 +338,80 @@ class GmailImageExtractor(object):
         try:
             messages = self.parse_selected_images(msg)
         except:
-            return
+            print("Couldn't parse selected images.")
 
         num_messages_changed, num_images_deleted = self.do_delete(messages, callback)
 
         return num_messages_changed, num_images_deleted
+
+    def zip_images(self, messages_to_save):
+        """
+        Creates a zip archive of images that were selected by the user.
+
+        This function must be used in conjunction with the function parse_selected_images.
+        """
+
+        s = StringIO.StringIO()
+        zf = zipfile.ZipFile(s, mode='w')
+
+        try:
+            for message, some_images in messages_to_save.iteritems():
+                for an_image in some_images:
+                    zf.writestr(an_image.name(), an_image.body())
+
+        finally:
+            zf.close()
+
+        # f = file("gmail_image_archive.zip", "w")
+        # f.write(s.getvalue())
+        # s.close()
+        # f.close()
+
+        return zf
+
+    def package_images(self, messages_to_save):
+
+        encoded_images = []
+
+        for message, some_images in messages_to_save.iteritems():
+            for an_image in some_images:
+                # encode the image
+                encoded_image = base64.b64encode(an_image.body())
+                # add encoded image to array of encoded images
+                encoded_images.append(encoded_image)
+
+        return encoded_images
+
+    def save(self, msg, callback=None):
+
+        packaged_images = []
+
+        def _cb(*args):
+            if callback:
+                return callback(*args)
+
+        try:
+            messages = self.parse_selected_images(msg)
+        except:
+            print("Couldn't parse selected images.")
+
+        try:
+            # zip_file = self.zip_images(messages)
+            packaged_images = self.package_images(messages)
+
+            # encode zip_file to base64 to send via websocket
+            # with open(zip_file, 'rb') as fin, open('gmail_image_archive.zip.b64', 'w') as fout:
+            # encoded_zip_file = base64.encode(fin, fout)
+
+            # return True, encoded_zip_file
+            # return True, zip_file
+            _cb("save-passed", packaged_images)
+
+        except:
+            _cb("save_failed", [])
+
+        finally:
+            return
 
     def check_deletions(self):
         """Checks the filesystem to see which image attachments, downloaded

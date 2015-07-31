@@ -44,9 +44,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         elif msg['type'] == 'delete':
             self._handle_delete(msg)
         elif msg['type'] == 'save':
-            print "save!"  # TODO call save handle
-        elif msg['type'] == 'stop':
-            print "stop!"  # TODO call stop handle
+            self._handle_save(msg)
         else:
             return
 
@@ -124,6 +122,18 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                                       plural(u"image", num_images_deleted),
                                       num_messages_changed,
                                       plural(u"message", num_messages_changed))})
+
+    def _handle_save(self, msg):
+        extractor = state['extractor']
+
+        def _save_status(*args):
+            update_type = args[0]
+            if update_type == "save-passed":
+                self.write_message({"ok": True,
+                                    "type": "save",
+                                    "file": args[1]})
+
+        extractor.save(msg, _save_status)
 
     def _handle_sync(self, msg):
         extractor = state['extractor']

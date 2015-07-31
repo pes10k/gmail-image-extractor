@@ -170,7 +170,7 @@ jQuery(function ($) {
 		//change delete button state
 		num_checked = count_checked();
 		changeBtnState(num_checked, "delete");
-		changeBtnState(num_checked, "save");
+		// changeBtnState(num_checked, "save");
 	});
 
 	//on click sends selected images to server to retreive full sized images
@@ -178,21 +178,25 @@ jQuery(function ($) {
 
 		var params = {};
 
-		//if not images are selected, display modal
-		if (selected_imgs.length === 0) {
-
-			$('#saveModal').modal('show');
-		}
 		//send all selected images to backend
-		else {
+		params = JSON.stringify({
+			"type": "save",
+			"image": selected_imgs	
+		});
 
-			params = JSON.stringify({
-				"type": "save",
-				"images": selected_imgs	
-			});
+		ws.send(params);
 
-			ws.send(params);
-		}
+	});
+
+	//sends currently selected images to the backend for removal
+	$delete.click(function () {
+
+		var params = JSON.stringify({
+			"type" : "delete",
+			"image" : selected_imgs
+		});
+
+		ws.send(params);
 
 	});
 
@@ -225,19 +229,7 @@ jQuery(function ($) {
 		return false;
 	});
 
-	//sends currently selected images to the backend for removal
-	$delete.click(function () {
-
-		var params = JSON.stringify({
-			"type" : "delete",
-			"image" : selected_imgs
-		});
-
-		console.log(selected_imgs);
-		ws.send(params);
-
-	});
-
+	
 	$confim_form.submit(function () {
 
 		var params = JSON.stringify({
@@ -294,39 +286,65 @@ jQuery(function ($) {
 		}
 	};
 
-	/* 
-	 * Adds the signed hmac key to an array
-	 */
-	$(document).on( "click", "input.img-checkbox", function() {
+	function save_file(encoded_zip)
+	{
+		try {
+
+			//create JSZip object
+			var zip = new JSZip();
+
+			//for (var i = 0; i < encoded_zip.length; i++)
+			//{
+				//zip.file(i.toString(), encoded_zip[i], {base64: true});
+			//}
+			
+			zip.file("test.png", encoded_zip[0], {base64: true});
+			
+			var content = null;
+
+			var content = zip.generate({type:"blob"});
+
+			//display os save dialoge using FileSaver.js
+			saveAs(content, "gmail_images.zip");
+
+		} catch(e) {
+			console.log(e)
+		}
+		
+	};
+
+/* 
+ * Adds the signed hmac key to an array
+ */
+$(document).on( "click", "input.img-checkbox", function() {
 
 		var img_id = [ $(this).attr("name"), $(this).attr("id") ];
 		var is_checked = $(this).prop('checked');
 		var num_checked = count_checked();
 
 		changeBtnState(num_checked, "delete");
-		changeBtnState(num_checked, "save");
+		//changeBtnState(num_checked, "save");
 
 		//checkbox is clicked, save filename in an array
 		if(is_checked){
 
-			selected_imgs.push(img_id);
+		selected_imgs.push(img_id);
 		}
 		//checkbox is unclicked, remove filename from the array
 		else {
 
-			var index = selected_imgs.indexOf(img_id); 
-			selected_imgs.splice(index, 1);
+		var index = selected_imgs.indexOf(img_id); 
+		selected_imgs.splice(index, 1);
 		}
-		console.log(selected_imgs);
-	});
+		});
 
-	ws.onmessage = function (evt) {
-		var msg = JSON.parse(evt.data);
+ws.onmessage = function (evt) {
+	var msg = JSON.parse(evt.data);
 
-		switch (msg['type']) {
+	switch (msg['type']) {
 
-			case "connect":
-				feedback(msg);
+		case "connect":
+			feedback(msg);
 			if (!msg.ok) {
 				$auth_fields.removeAttr("disabled");
 			} else {
@@ -334,57 +352,62 @@ jQuery(function ($) {
 			}
 			break;
 
-			case "count":
-				feedback(msg);
+		case "count":
+			feedback(msg);
 			num_messages = msg.num;
 			break;
 
-			case "image": //added
-				$image_menu.fadeIn();
+		case "image": //added
+			$image_menu.fadeIn();
 			update_results(msg.msg_id, msg.img_id, msg.enc_img, msg.hmac_key);
+			break;
 
-			case "downloading":
-				feedback(msg);
+		case "save":
+			save_file(msg.file);
+			break;
+
+		case "downloading":
+			feedback(msg);
 			update_progress(msg.num, num_messages);
 			break;
 
-			case "download-complete":
-				feedback(msg, "Please check all attachments you'd like removed from your GMail account");
+		case "download-complete":
+			feedback(msg, "Please check all attachments you'd like removed from your GMail account");
 			hide_progress();
 			//$sync_form.fadeIn();
 			break;
 
-			case "file-checking":
-				feedback(msg);
+		case "file-checking":
+			feedback(msg);
 			update_progress();
 			//$sync_form.fadeOut();
 			break;
 
-			case "file-checked":
-				rewrite_total = msg.num;
+		case "file-checked":
+			rewrite_total = msg.num;
 			hide_progress();
 			$alert.hide();
 			$confim_form
-			.fadeIn()
-			.find("p")
-			.text("Are you sure you want to remove " + rewrite_total + " images from your email account?  This action is irreversable.");
+				.fadeIn()
+				.find("p")
+				.text("Are you sure you want to remove " + rewrite_total + " images from your email account?  This action is irreversable.");
 			break;
 
-			case "removing":
-				$confim_form.fadeOut();
+		case "removing":
+			$confim_form.fadeOut();
 			feedback(msg);
 			update_progress(++rewrite_index, rewrite_total);
 			break;
 
-			case "removed":
-				feedback(msg);
+		case "removed":
+			feedback(msg);
 			break;
 
-			case "finished":
-				feedback(msg);
+		case "finished":
+			feedback(msg);
 			hide_progress();
 			break;
-		}
-	};
+	}
+};
 
 });
